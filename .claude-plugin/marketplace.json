@@ -1,0 +1,18 @@
+{
+  "name": "promode",
+  "owner": {
+    "name": "promode"
+  },
+  "metadata": {
+    "description": "Promode enhances Claude Code so it builds software more intelligently"
+  },
+  "plugins": [
+    {
+      "name": "promode",
+      "source": "./plugins/promode",
+      "description": "Promode enhances Claude Code so it builds software more intelligently",
+      "category": "utilities",
+      "tags": ["skills", "tools", "development", "productivity"]
+    }
+  ]
+}
