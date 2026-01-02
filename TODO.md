@@ -10,14 +10,20 @@
   - [x] Distribution approach
   - [x] Claude Code compatibility layer
 - [x] Document goals and feasibility (see `docs/opencode-port/README.md`)
+- [x] Test subagent spawning in OpenCode (2026-01-02)
+  - [x] Verified OpenCode v1.0.208 installed with oh-my-opencode plugin
+  - [x] Confirmed main agent has `background_task`, `call_omo_agent`, `task` tools
+  - [x] Found oh-my-opencode explicitly disables `background_task: false` for subagents
+  - [x] **Conclusion**: OpenCode supports it; oh-my-opencode disables by design choice
+
 ### Open Questions (Need Testing)
 
-- [ ] **Subagent spawning subagents** — Does OpenCode allow it? oh-my-opencode disables it, but may just be a choice
+- [x] ~~**Subagent spawning subagents** — Does OpenCode allow it?~~ **Answered**: Yes, plugin can enable via `background_task: true`
 - [ ] **Context usage visibility** — How to expose token counts to agents? Custom tool or system prompt injection?
 
 ### Next Up
 
-- [ ] Test subagent spawning in OpenCode (install opencode, try it)
+- [ ] Test context usage visibility — can we expose token counts to agents?
 
 ### Implementation (When Ready)
 

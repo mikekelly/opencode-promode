@@ -40,8 +40,8 @@ Based on OpenCode docs and oh-my-opencode analysis:
 |------|-------------|----------|
 | Custom main agent | ✅ Supported | Plugin `config` hook provides agents |
 | Self-compaction | ⚠️ Needs custom tool | Plugin can expose `ctx.client.session.summarize()` as a tool |
-| Subagent spawning | ❓ Unknown | Not documented; may need OpenCode extension |
-| Async subagents | ✅ Partial | Session hierarchy with interruption exists |
+| Subagent spawning | ❌ Intentionally disabled | Plugin design choice, not OpenCode limitation (see below) |
+| Async subagents | ✅ Supported | `background_task` + `background_output` tools |
 | E2E testing | ✅ Supported | `opencode run` command exists |
 | Plugin vs fork | ✅ Plugin first | 30+ hooks, custom tools, agents all via plugins |
 
@@ -70,12 +70,39 @@ The `experimental.session.compacting` hook can inject promode-specific context i
 
 ### Subagent Spawning Subagents
 
-**Status**: Not documented in OpenCode. oh-my-opencode disables `background_task` tool for subagents, suggesting this may be intentionally prevented.
+**Status**: ❌ **Not supported** — by plugin design choice, not OpenCode limitation.
 
-**Options**:
-1. Test if OpenCode allows it (may just work)
-2. Fork OpenCode to enable it
-3. Design around single-level delegation
+**Test Results** (2026-01-02):
+
+We tested this using OpenCode v1.0.208 with oh-my-opencode plugin. Key findings:
+
+1. **Main agent tools include**: `background_task`, `background_output`, `background_cancel`, `call_omo_agent`, `task`
+2. **Subagent tools explicitly exclude**: `background_task: false`, `write: false`, `edit: false` (from oh-my-opencode's `explore.ts`)
+3. **Verification**: Running `opencode run --agent explore` shows "explore is a subagent, not a primary agent" and falls back to main
+
+**How oh-my-opencode restricts subagents**:
+
+```typescript
+// From src/agents/explore.ts
+export const exploreAgent: AgentConfig = {
+  mode: "subagent",
+  tools: {
+    write: false,      // Cannot create files
+    edit: false,       // Cannot modify files
+    background_task: false,  // Cannot spawn other agents
+  },
+  // ...
+}
+```
+
+**Conclusion**: OpenCode's plugin architecture **can** enable subagent spawning by setting `background_task: true` in agent configs. The limitation is oh-my-opencode's design choice, not an OpenCode restriction.
+
+**Options for promode**:
+1. ✅ **Enable it**: Set `background_task: true` for promode-subagent to allow nested delegation
+2. ⚠️ **Keep single-level**: Match oh-my-opencode's approach for context conservation
+3. 🔧 **Conditional**: Enable only for specific "coordinator" subagents
+
+**Recommendation**: Start with single-level (like oh-my-opencode) to prevent runaway context usage. Add nested spawning later if needed for specific workflows.
 
 ## Key Reference: oh-my-opencode
 
@@ -189,7 +216,7 @@ promode-opencode/
 
 ## Open Questions
 
-1. **Subagent spawning**: Does OpenCode allow it? Need to test.
+1. ~~**Subagent spawning**: Does OpenCode allow it? Need to test.~~ ✅ **Answered**: Yes, OpenCode allows it. oh-my-opencode disables it by choice via `background_task: false`.
 2. **Context usage visibility**: How to expose token counts to agents? Custom tool or system prompt injection?
 3. **Fork threshold**: What would require forking OpenCode vs plugin extension?
 
