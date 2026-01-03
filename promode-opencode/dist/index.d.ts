@@ -10,6 +10,6 @@ import type { Plugin } from "@opencode-ai/plugin";
  * Core innovation: Agents can see their context usage and trigger
  * compaction themselves, enabling longer autonomous work sessions.
  */
-export declare const PromodePlugin: Plugin;
+declare const PromodePlugin: Plugin;
 export default PromodePlugin;
 //# sourceMappingURL=index.d.ts.map

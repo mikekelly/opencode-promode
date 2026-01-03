@@ -40,11 +40,29 @@
   - Created `promode-opencode/src/agents/promode-subagent.ts`
   - Full promode methodology prompt (TDD, behavioural authority, escalation rules)
   - Registered via plugin `config` hook in `src/index.ts`
-- [ ] Port existing skills (should be ~1:1)
-- [ ] Implement TDD enforcement hook
-- [ ] Implement context monitor hook (auto-inject warnings at thresholds)
-- [ ] Design e2e test harness using OpenCode CLI
-- [ ] Build CLI installer
+- [x] Port existing skills to OpenCode format (2026-01-03)
+  - Copied skills to `promode-opencode/skills/` (managing-claude-code-meta, managing-skills)
+  - Created skill loader at `src/features/skill-loader.ts`
+  - Skills bundled with npm package for distribution
+- [x] Implement TDD enforcement hook (2026-01-03)
+  - Created `promode-opencode/src/hooks/tdd-enforcer.ts`
+  - Tracks test vs implementation file modifications
+  - Adds gentle reminders when editing impl files without recent test changes
+  - Caches tool args between before/after hooks for file path detection
+- [x] Implement context monitor hook (2026-01-03)
+  - Created `promode-opencode/src/hooks/context-monitor.ts`
+  - Tracks token usage from `message.updated` events
+  - Appends context status to tool outputs when usage > 50%
+  - Thresholds: MODERATE (50-70%), HIGH (70-85%), CRITICAL (>85%)
+- [x] Design e2e test harness using OpenCode CLI (2026-01-03)
+  - Created `tests/e2e/` with test runner and prompt files
+  - Tests: context-usage, self-compact, subagent-check
+  - Runs via `./tests/e2e/run-tests.sh`
+- [x] Build CLI installer (2026-01-03)
+  - Created `promode-opencode/src/cli/install.ts`
+  - Commands: install, uninstall, status, help
+  - Registers plugin in `~/.config/opencode/opencode.json`
+  - Creates promode config at `~/.config/opencode/promode.json`
 
 ### Reference
 
