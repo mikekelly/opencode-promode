@@ -39,11 +39,95 @@ Based on OpenCode docs and oh-my-opencode analysis:
 | Goal | Feasibility | Approach |
 |------|-------------|----------|
 | Custom main agent | ✅ Supported | Plugin `config` hook provides agents |
-| Self-compaction | ⚠️ Needs custom tool | Plugin can expose `ctx.client.session.summarize()` as a tool |
-| Subagent spawning | ❌ Intentionally disabled | Plugin design choice, not OpenCode limitation (see below) |
+| Context visibility | ✅ Supported | Custom tool + `tool.execute.after` hook (see below) |
+| Self-compaction | ✅ Supported | Plugin can expose `ctx.client.session.summarize()` as a tool |
+| Subagent spawning | ✅ Supported | Set `background_task: true` in agent config (see below) |
 | Async subagents | ✅ Supported | `background_task` + `background_output` tools |
 | E2E testing | ✅ Supported | `opencode run` command exists |
 | Plugin vs fork | ✅ Plugin first | 30+ hooks, custom tools, agents all via plugins |
+
+### Context Usage Visibility
+
+**Status**: ✅ **Feasible** — via hooks + custom tool (2026-01-02)
+
+**How token info is available in OpenCode:**
+
+1. **Message events include token metadata**: The `message.updated` event provides `info.tokens` with:
+   ```typescript
+   tokens: {
+     input: number      // Input tokens consumed
+     output: number     // Output tokens generated
+     reasoning: number  // Reasoning tokens (if applicable)
+     cache: { read: number; write: number }  // Cache hits/writes
+   }
+   ```
+
+2. **Session messages API**: `ctx.client.session.messages({ path: { id: sessionID } })` returns all messages with their token info attached to assistant messages.
+
+3. **No direct "get current usage" API**: OpenCode doesn't expose a simple `getContextUsage()` method. You must track token counts from message events or query session messages.
+
+**How oh-my-opencode exposes context to agents:**
+
+1. **`context-window-monitor` hook**: Appends context status to tool output via `tool.execute.after`:
+   ```
+   [Context Status: 14.0% used (140,000/1,000,000 tokens), 86.0% remaining]
+   ```
+
+2. **System reminder injection**: When usage exceeds 70%, injects a reminder telling the agent it has plenty of context remaining.
+
+3. **`preemptive-compaction` hook**: Monitors `message.updated` events and triggers `ctx.client.session.summarize()` at 85% usage.
+
+**Approaches for promode:**
+
+| Approach | Pros | Cons |
+|----------|------|------|
+| **Hook injection** (like oh-my-opencode) | Automatic, no agent action needed | Agent can't query on-demand |
+| **Custom tool** (`get_context_usage`) | Agent can check when needed | Adds tool call overhead |
+| **System prompt injection** | Always visible | Stale by the time agent reads it |
+| **Combination** | Best of both | More complexity |
+
+**Recommended implementation:**
+
+```typescript
+// 1. Custom tool for on-demand queries
+const getContextUsage: ToolDefinition = {
+  description: "Get current context window usage percentage and token counts",
+  parameters: z.object({}),
+  async execute(args, toolCtx) {
+    const messages = await ctx.client.session.messages({
+      path: { id: toolCtx.sessionID }
+    })
+    const lastAssistant = messages
+      .filter(m => m.info.role === "assistant")
+      .pop()
+
+    if (!lastAssistant?.info.tokens) {
+      return { error: "No token info available yet" }
+    }
+
+    const tokens = lastAssistant.info.tokens
+    const used = tokens.input + tokens.cache.read
+    const limit = 200_000  // Claude default
+    const percentage = (used / limit * 100).toFixed(1)
+
+    return {
+      used_tokens: used,
+      limit_tokens: limit,
+      percentage: `${percentage}%`,
+      remaining_tokens: limit - used
+    }
+  }
+}
+
+// 2. Hook for automatic warnings (like oh-my-opencode)
+const contextMonitor = {
+  "tool.execute.after": async (input, output) => {
+    // Append usage info when above threshold
+  }
+}
+```
+
+**Key insight**: Token information flows through **message events**, not a dedicated API. Track it yourself or query session messages.
 
 ### Self-Compaction Implementation
 
@@ -217,7 +301,7 @@ promode-opencode/
 ## Open Questions
 
 1. ~~**Subagent spawning**: Does OpenCode allow it? Need to test.~~ ✅ **Answered**: Yes, OpenCode allows it. oh-my-opencode disables it by choice via `background_task: false`.
-2. **Context usage visibility**: How to expose token counts to agents? Custom tool or system prompt injection?
+2. ~~**Context usage visibility**: How to expose token counts to agents?~~ ✅ **Answered**: Custom tool + hook injection (see "Context Usage Visibility" section above).
 3. **Fork threshold**: What would require forking OpenCode vs plugin extension?
 
 ## Next Steps
