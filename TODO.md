@@ -19,19 +19,30 @@
 ### Open Questions (Need Testing)
 
 - [x] ~~**Subagent spawning subagents** — Does OpenCode allow it?~~ **Answered**: Yes, plugin can enable via `background_task: true`
-- [ ] **Context usage visibility** — How to expose token counts to agents? Custom tool or system prompt injection?
+- [x] ~~**Context usage visibility** — How to expose token counts to agents?~~ **Answered**: Custom tool + hook injection (2026-01-02)
+  - Token info available via `message.updated` event (`info.tokens`) and `ctx.client.session.messages()` API
+  - oh-my-opencode uses `tool.execute.after` hook to append usage to tool output
+  - Recommend: custom `get_context_usage` tool + automatic hook injection at thresholds
 
-### Next Up
+### Implementation
 
-- [ ] Test context usage visibility — can we expose token counts to agents?
-
-### Implementation (When Ready)
-
-- [ ] Implement `self_compact` tool for agent-initiated compaction
-- [ ] Port `promode-subagent` as OpenCode agent definition
+- [x] Implement `self_compact` tool for agent-initiated compaction (2026-01-02)
+  - Created `promode-opencode/src/tools/self-compact.ts`
+  - Safety gate requires `confirm_externalized: true` before compacting
+  - Calls `ctx.client.session.summarize()` to trigger compaction
+- [x] Implement `get_context_usage` tool (2026-01-02)
+  - Created `promode-opencode/src/tools/get-context-usage.ts`
+  - Queries session messages for token info
+  - Returns status: low/moderate/high/critical with recommendations
+- [x] Create plugin entry point with compaction hook (2026-01-02)
+  - `experimental.session.compacting` injects promode context preservation hints
+- [x] Port `promode-subagent` as OpenCode agent definition (2026-01-03)
+  - Created `promode-opencode/src/agents/promode-subagent.ts`
+  - Full promode methodology prompt (TDD, behavioural authority, escalation rules)
+  - Registered via plugin `config` hook in `src/index.ts`
 - [ ] Port existing skills (should be ~1:1)
 - [ ] Implement TDD enforcement hook
-- [ ] Implement context monitor hook
+- [ ] Implement context monitor hook (auto-inject warnings at thresholds)
 - [ ] Design e2e test harness using OpenCode CLI
 - [ ] Build CLI installer
 
