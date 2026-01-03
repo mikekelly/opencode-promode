@@ -2,6 +2,8 @@ import type { Plugin } from "@opencode-ai/plugin"
 import { createSelfCompactTool } from "./tools/self-compact"
 import { createGetContextUsageTool } from "./tools/get-context-usage"
 import { promodeAgents } from "./agents"
+import { createTDDEnforcerHook } from "./hooks/tdd-enforcer"
+import { createContextMonitorHook } from "./hooks/context-monitor"
 
 /**
  * Promode OpenCode Plugin
@@ -14,24 +16,16 @@ import { promodeAgents } from "./agents"
  * Core innovation: Agents can see their context usage and trigger
  * compaction themselves, enabling longer autonomous work sessions.
  */
-export const PromodePlugin: Plugin = async (ctx) => {
+const PromodePlugin: Plugin = async (ctx) => {
+  // Initialize hooks
+  const tddEnforcer = createTDDEnforcerHook(ctx)
+  const contextMonitor = createContextMonitorHook(ctx)
+
   return {
     // Custom tools for context management
     tool: {
       self_compact: createSelfCompactTool(ctx),
       get_context_usage: createGetContextUsageTool(ctx),
-    },
-
-    // Inject promode context into compaction summaries
-    "experimental.session.compacting": async (_input, output) => {
-      output.context.push(`
-PROMODE CONTEXT TO PRESERVE:
-- Current task and its completion status
-- TDD state: which tests exist, which are passing/failing
-- Files actively being worked on
-- Key decisions made during this session
-- Any externalized state locations (.context/ files, TODO.md)
-`)
     },
 
     // Register promode agents via config hook
@@ -43,10 +37,26 @@ PROMODE CONTEXT TO PRESERVE:
       }
     },
 
-    // Future: TDD enforcement hooks will go here
-    // "tool.execute.before": async (input, output) => {
-    //   // Check for test-first patterns
-    // },
+    // Handle session events (context tracking)
+    event: async (input) => {
+      await contextMonitor.event(input)
+    },
+
+    // Pre-tool execution hook (TDD tracking)
+    "tool.execute.before": async (input, output) => {
+      await tddEnforcer["tool.execute.before"](input, output)
+    },
+
+    // Post-tool execution hook (TDD reminders + context status)
+    "tool.execute.after": async (input, output) => {
+      await tddEnforcer["tool.execute.after"](input, output)
+      await contextMonitor["tool.execute.after"](input, output)
+    },
+
+    // Inject promode context into compaction summaries
+    "experimental.session.compacting": async (input, output) => {
+      await contextMonitor["experimental.session.compacting"](input, output)
+    },
   }
 }
 

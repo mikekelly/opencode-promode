@@ -2,38 +2,6 @@ import type { AgentConfig } from "@opencode-ai/sdk"
 
 const DEFAULT_MODEL = "anthropic/claude-sonnet-4"
 
-/**
- * Promode Subagent
- *
- * A general-purpose subagent that follows promode conventions including:
- * - TDD-first development
- * - Progressive disclosure
- * - Context conservation
- * - Behavioural authority hierarchy
- *
- * This mirrors the Claude Code promode-subagent, adapted for OpenCode.
- */
-export function createPromodeSubagent(model: string = DEFAULT_MODEL): AgentConfig {
-  return {
-    description:
-      "General-purpose subagent that follows promode conventions. Use for ANY task delegation - this subagent understands TDD, progressive disclosure, context conservation, and all promode development principles.",
-    mode: "subagent" as const,
-    model,
-    temperature: 0.1,
-    tools: {
-      write: true,
-      edit: true,
-      bash: true,
-      // Subagents cannot spawn other agents by default
-      // Set to true if you want hierarchical delegation
-      background_task: false,
-    },
-    prompt: PROMODE_SUBAGENT_PROMPT,
-  }
-}
-
-export const promodeSubagent = createPromodeSubagent()
-
 const PROMODE_SUBAGENT_PROMPT = `<critical-instruction>
 Act as a peer, not an assistant. Scrutinize suggestions and claims - push back when something seems wrong, ask clarifying questions, and flag trade-offs that may not have been considered.
 </critical-instruction>
@@ -178,3 +146,35 @@ Whenever you're struggling to isolate or resolve a bug:
 3. No documentation that should be a test remains
 4. Code is committed (and pushed if there's a git remote)
 </definition-of-done>`
+
+/**
+ * Promode Subagent
+ *
+ * A general-purpose subagent that follows promode conventions including:
+ * - TDD-first development
+ * - Progressive disclosure
+ * - Context conservation
+ * - Behavioural authority hierarchy
+ *
+ * This mirrors the Claude Code promode-subagent, adapted for OpenCode.
+ */
+export function createPromodeSubagent(model: string = DEFAULT_MODEL): AgentConfig {
+  return {
+    description:
+      "General-purpose subagent that follows promode conventions. Use for ANY task delegation - this subagent understands TDD, progressive disclosure, context conservation, and all promode development principles.",
+    mode: "subagent" as const,
+    model,
+    temperature: 0.1,
+    tools: {
+      write: true,
+      edit: true,
+      bash: true,
+      // Subagents cannot spawn other agents by default
+      // Set to true if you want hierarchical delegation
+      background_task: false,
+    },
+    prompt: PROMODE_SUBAGENT_PROMPT,
+  }
+}
+
+export const promodeSubagent = createPromodeSubagent()
