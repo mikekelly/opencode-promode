@@ -2,14 +2,12 @@ import type { Plugin } from "@opencode-ai/plugin"
 import { createSelfCompactTool } from "./tools/self-compact"
 import { createGetContextUsageTool } from "./tools/get-context-usage"
 import { promodeAgents } from "./agents"
-import { createTDDEnforcerHook } from "./hooks/tdd-enforcer"
 import { createContextMonitorHook } from "./hooks/context-monitor"
 
 /**
  * Promode OpenCode Plugin
  *
  * Enhances OpenCode with promode development methodology:
- * - TDD-first development
  * - Context-aware self-compaction
  * - Promode-trained subagents
  *
@@ -18,7 +16,6 @@ import { createContextMonitorHook } from "./hooks/context-monitor"
  */
 const PromodePlugin: Plugin = async (ctx) => {
   // Initialize hooks
-  const tddEnforcer = createTDDEnforcerHook(ctx)
   const contextMonitor = createContextMonitorHook(ctx)
 
   return {
@@ -42,14 +39,8 @@ const PromodePlugin: Plugin = async (ctx) => {
       await contextMonitor.event(input)
     },
 
-    // Pre-tool execution hook (TDD tracking)
-    "tool.execute.before": async (input, output) => {
-      await tddEnforcer["tool.execute.before"](input, output)
-    },
-
-    // Post-tool execution hook (TDD reminders + context status)
+    // Post-tool execution hook (context status)
     "tool.execute.after": async (input, output) => {
-      await tddEnforcer["tool.execute.after"](input, output)
       await contextMonitor["tool.execute.after"](input, output)
     },
 

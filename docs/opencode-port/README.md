@@ -214,7 +214,6 @@ export const exploreAgent: AgentConfig = {
 |---|---|
 | Agent-initiated compaction | Only external (plugin-triggered) |
 | Subagent spawning subagents | Explicitly disabled |
-| TDD enforcement hooks | Not implemented |
 | Promode methodology | Not their focus |
 
 ## Analysis Findings
@@ -251,7 +250,6 @@ const PromodePlugin: Plugin = async (ctx) => {
 
     // Lifecycle hooks
     event: async (input) => { /* context monitoring */ },
-    "tool.execute.before": async (input, output) => { /* TDD enforcement */ },
 
     // Compaction customization
     "experimental.session.compacting": async (input, output) => {
@@ -281,7 +279,6 @@ promode-opencode/
 │   │   ├── self-compact.ts        # Agent-initiated compaction
 │   │   └── index.ts
 │   ├── hooks/
-│   │   ├── tdd-enforcer/          # Ensure tests before implementation
 │   │   ├── context-monitor/       # Expose context usage to agents
 │   │   └── index.ts
 │   ├── features/

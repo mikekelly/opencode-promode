@@ -3,7 +3,6 @@ import type { Plugin } from "@opencode-ai/plugin";
  * Promode OpenCode Plugin
  *
  * Enhances OpenCode with promode development methodology:
- * - TDD-first development
  * - Context-aware self-compaction
  * - Promode-trained subagents
  *

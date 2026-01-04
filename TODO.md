@@ -44,11 +44,9 @@
   - Copied skills to `promode-opencode/skills/` (managing-claude-code-meta, managing-skills)
   - Created skill loader at `src/features/skill-loader.ts`
   - Skills bundled with npm package for distribution
-- [x] Implement TDD enforcement hook (2026-01-03)
-  - Created `promode-opencode/src/hooks/tdd-enforcer.ts`
-  - Tracks test vs implementation file modifications
-  - Adds gentle reminders when editing impl files without recent test changes
-  - Caches tool args between before/after hooks for file path detection
+- [x] ~~Implement TDD enforcement hook~~ **Removed** (2026-01-04)
+  - Was too flaky — hard-coded file patterns don't generalize across languages/projects
+  - TDD enforcement better handled via agent prompts, not deterministic hooks
 - [x] Implement context monitor hook (2026-01-03)
   - Created `promode-opencode/src/hooks/context-monitor.ts`
   - Tracks token usage from `message.updated` events
